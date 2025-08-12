@@ -34,11 +34,22 @@ public sealed record RecipeData
         ClassJob = (ClassJob)Recipe.CraftType.RowId;
 
         var resolvedLevelTableRow = Recipe.RecipeLevelTable.RowId;
-        if (Recipe.Unknown0 != 0)
+                
+        bool isLevelSynced = Recipe.Unknown1;
+
+        if (isLevelSynced)
         {
-            AdjustedJobLevel = Math.Min(explicitlyAdjustedJobLevel ?? ClassJob.GetWKSSyncedLevel(), Recipe.Unknown0);
-            resolvedLevelTableRow = LuminaSheets.GathererCrafterLvAdjustTableSheet.GetRow(AdjustedJobLevel.Value).Unknown0;
+            var cap = (ushort)Recipe.RecipeLevelTable.Value.ClassJobLevel;
+
+            AdjustedJobLevel = Math.Min(
+                explicitlyAdjustedJobLevel ?? ClassJob.GetWKSSyncedLevel(),
+                cap
+            );
+
+            var adj = LuminaSheets.GathererCrafterLvAdjustTableSheet.GetRow(AdjustedJobLevel.Value);
+            resolvedLevelTableRow = adj.RecipeLevel.RowId;
         }
+        
         Table = LuminaSheets.RecipeLevelTableSheet.GetRow(resolvedLevelTableRow);
 
         RecipeInfo = new()
@@ -46,7 +57,7 @@ public sealed record RecipeData
             IsExpert = Recipe.IsExpert,
             ClassJobLevel = Table.ClassJobLevel,
             ConditionsFlag = Table.ConditionsFlag,
-            MaxDurability = (Recipe.Unknown0 != 0 ? 80 : Table.Durability) * Recipe.DurabilityFactor / 100,
+            MaxDurability = (isLevelSynced ? 80 : Table.Durability) * Recipe.DurabilityFactor / 100,
             MaxQuality = (Recipe.CanHq || Recipe.IsExpert) ? (int)Table.Quality * Recipe.QualityFactor / 100 : 0,
             MaxProgress = Table.Difficulty * Recipe.DifficultyFactor / 100,
             QualityModifier = Table.QualityModifier,

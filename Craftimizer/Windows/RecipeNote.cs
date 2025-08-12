@@ -20,7 +20,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -194,7 +194,7 @@ public sealed unsafe class RecipeNote : Window, IDisposable
 
         bool ShouldUseRecipeNote()
         {
-            Addon = (AtkUnitBase*)Service.GameGui.GetAddonByName("RecipeNote");
+            Addon = (AtkUnitBase*)Service.GameGui.GetAddonByName("RecipeNote").Address;
             if (Addon == null)
                 return false;
 
@@ -211,7 +211,7 @@ public sealed unsafe class RecipeNote : Window, IDisposable
 
         bool ShouldUseWKSRecipeNote()
         {
-            Addon = (AtkUnitBase*)Service.GameGui.GetAddonByName("WKSRecipeNotebook");
+            Addon = (AtkUnitBase*)Service.GameGui.GetAddonByName("WKSRecipeNotebook").Address;
             if (Addon == null)
                 return false;
 
@@ -1108,12 +1108,12 @@ public sealed unsafe class RecipeNote : Window, IDisposable
             ImGui.TableNextColumn();
             ImGui.TextUnformatted("Current");
             ImGui.TableNextColumn();
-            ImGui.TextColored(new(0, 1, 0, 1), $"{current}");
+            ImGui.TextColored(new Vector4(0f, 1f, 0f, 1f), $"{current}");
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted("Required");
             ImGui.TableNextColumn();
-            ImGui.TextColored(new(1, 0, 0, 1), $"{required}");
+            ImGui.TextColored(new Vector4(1f, 0f, 1f, 0f), $"{required}");
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted("You need");

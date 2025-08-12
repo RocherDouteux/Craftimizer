@@ -3,8 +3,9 @@ using Dalamud.Interface;
 using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
-using ImPlotNET;
+using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImPlot;
+
 using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
@@ -315,14 +316,14 @@ internal static class ImGuiUtils
 
     public static void ViolinPlot(in ViolinData data, Vector2 size)
     {
-        using var padding = ImRaii2.PushStyle(ImPlotStyleVar.PlotPadding, Vector2.Zero);
-        using var plotBg = ImRaii2.PushColor(ImPlotCol.PlotBg, Vector4.Zero);
+        using var padding = ImRaii2.PushStyle(ImPlotStyleVar.Padding, Vector2.Zero);
+        using var plotBg = ImRaii2.PushColor(ImPlotCol.Bg, Vector4.Zero);
         using var fill = ImRaii2.PushColor(ImPlotCol.Fill, Vector4.One.WithAlpha(.5f));
 
         using var plot = ImRaii2.Plot("##violin", size, ImPlotFlags.CanvasOnly | ImPlotFlags.NoInputs | ImPlotFlags.NoChild | ImPlotFlags.NoFrame);
         if (plot)
         {
-            ImPlot.SetupAxes(null, null, ImPlotAxisFlags.NoDecorations, ImPlotAxisFlags.NoDecorations | ImPlotAxisFlags.AutoFit);
+            ImPlot.SetupAxes(string.Empty, string.Empty, ImPlotAxisFlags.NoDecorations, ImPlotAxisFlags.NoDecorations | ImPlotAxisFlags.AutoFit);
             ImPlot.SetupAxisLimits(ImAxis.X1, data.Min, data.Max, ImPlotCond.Always);
             ImPlot.SetupFinish();
 
@@ -333,7 +334,7 @@ internal static class ImGuiUtils
                     var label_id = stackalloc byte[] { (byte)'\0' };
                     fixed (ViolinData.Point* p = points)
                     {
-                        ImPlotNative.ImPlot_PlotShaded_FloatPtrFloatPtrFloatPtr(label_id, &p->X, &p->Y, &p->Y2, points.Length, ImPlotShadedFlags.None, 0, sizeof(ViolinData.Point));
+                        ImPlot.PlotShaded(label_id, &p->X, &p->Y, &p->Y2, points.Length, ImPlotShadedFlags.None, 0, sizeof(ViolinData.Point));
                     }
                 }
             }
@@ -522,7 +523,7 @@ internal static class ImGuiUtils
         ImGuiListClipperPtr imGuiListClipperPtr;
         unsafe
         {
-            imGuiListClipperPtr = new ImGuiListClipperPtr(ImGuiNative.ImGuiListClipper_ImGuiListClipper());
+            imGuiListClipperPtr = new ImGuiListClipperPtr(ImGuiNative.ImGuiListClipper());
         }
         try
         {
@@ -662,7 +663,7 @@ internal static class ImGuiUtils
             currentWrapWidth = wrapPosX - currentPos;
 
         var textBuf = text.AsSpan();
-        var lineSize = font.CalcWordWrapPositionA(ImGuiHelpers.GlobalScale, textBuf, currentWrapWidth) ?? textBuf.Length;
+        var lineSize = Math.Min(font.CalcWordWrapPositionA(ImGuiHelpers.GlobalScale, textBuf, currentWrapWidth), textBuf.Length);
         var lineBuf = textBuf[..lineSize];
         ImGui.TextUnformatted(lineBuf.ToString());
         var remainingBuf = textBuf[lineSize..].TrimStart();

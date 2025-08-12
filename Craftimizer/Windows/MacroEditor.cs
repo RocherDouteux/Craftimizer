@@ -12,7 +12,7 @@ using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -1003,21 +1003,25 @@ public sealed class MacroEditor : Window, IDisposable
         return ImGui.CalcTextSize(SqText.LevelPrefix.ToIconString()).X + 5 + levelTextWidth;
     }
     
+    private static readonly unsafe ImGui.ImGuiInputTextCallbackDelegate LevelFilterDelegate =
+        new ImGui.ImGuiInputTextCallbackDelegate(LevelInputCallback);
+
+    private static unsafe int LevelInputCallback(scoped ref ImGuiInputTextCallbackData data)
+    {
+        // Some versions use EventFlags (plural). If you only have EventFlag, keep it.
+        if (data.EventFlag == ImGuiInputTextFlags.CallbackCharFilter)
+        {
+            if (SqText.LevelNumReplacements.TryGetValue((char)data.EventChar, out var seChar))
+                data.EventChar = seChar.ToIconChar();
+            else
+                return 1;
+        }
+        return 0;
+    }
+    
     private bool DrawLevelEntry(ref int level)
     {
-        static unsafe int LevelInputCallback(ImGuiInputTextCallbackData* data)
-        {
-            if (data->EventFlag == ImGuiInputTextFlags.CallbackCharFilter)
-            {
-                if (SqText.LevelNumReplacements.TryGetValue((char)data->EventChar, out var seChar))
-                    data->EventChar = seChar.ToIconChar();
-                else
-                    return 1;
-            }
-
-            return 0;
-        }
-
+        
         var levelTextWidth = ImGui.CalcTextSize(SqText.ToLevelString(MAX_LEVEL)).X + ImGui.GetStyle().FramePadding.X * 2 + 5;
 
         ImGui.AlignTextToFramePadding();
@@ -1025,11 +1029,15 @@ public sealed class MacroEditor : Window, IDisposable
         ImGui.SameLine(0, 3);
         ImGui.SetNextItemWidth(levelTextWidth);
         var levelText = SqText.ToLevelString(level);
-        bool textChanged;
-        unsafe
-        {
-            textChanged = ImGui.InputText("##levelText", ref levelText, 12, ImGuiInputTextFlags.CallbackCharFilter | ImGuiInputTextFlags.AutoSelectAll, LevelInputCallback);
-        }
+        
+        bool textChanged = ImGui.InputText(
+            "##levelText",
+            ref levelText,
+            12,
+            ImGuiInputTextFlags.CallbackCharFilter | ImGuiInputTextFlags.AutoSelectAll,
+            LevelFilterDelegate
+        );
+        
         if (textChanged)
         {
             var newLevel = SqText.TryParseLevelString(levelText, out var lv)
